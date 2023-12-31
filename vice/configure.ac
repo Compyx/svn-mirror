@@ -10,8 +10,8 @@ dnl a development version. Don't add any strings to the version number (such
 dnl as '-dev' or 'beta'), the '-r$SVNREV' revision string is the only thing we
 dnl alllow after the version number.
 m4_define(vice_version_major, 3)
-m4_define(vice_version_minor, 7)
-m4_define(vice_version_build, 1)
+m4_define(vice_version_minor, 8)
+m4_define(vice_version_build, 0)
 
 dnl Some people lose their shit if a version ends in .0
 dnl also turns out some people lose it if it doesn't :)
@@ -1186,6 +1186,10 @@ if test x"$check_gtk3" = "xyes"; then
       AC_MSG_ERROR([GTK3 UI requested, but GTK3 support packages are missing])
     fi
   fi
+  dnl error out if gtk3 support is requested but zlib is disabled
+  if test x"$enable_gtk3ui" = "xyes" -a x"$with_zlib" = "xno"; then
+    AC_MSG_ERROR([GTK3 UI requested, but zlib is explicitly disabled])
+  fi
 
   dnl Used to compile the vice.gresource.xml file
   AC_CHECK_PROG(GLIB_COMPILE_RESOURCES, [glib-compile-resources], [glib-compile-resources], [no])
@@ -2142,6 +2146,12 @@ if test x"$with_zlib" != "xno" ; then
                  AC_DEFINE(HAVE_ZLIB,,
                  [Can we use the ZLIB compression library?]) ],,)
   fi
+fi
+
+if test x"$HAVE_ZLIB_SUPPORT" = "xyes" ; then
+  AM_CONDITIONAL(HAVE_ZLIB, true)
+else
+  AM_CONDITIONAL(HAVE_ZLIB, false)
 fi
 
 AC_SUBST(ZLIB_LIBS)

@@ -1,4 +1,4 @@
-/** \file   rommanager.c
+/** \file   settings_rom.c
  * \brief   Settings dialog to manage ROMs
  *
  * Presents a GtkListBox with expandable rows for machine, drive and drive
@@ -29,6 +29,69 @@
  *  02111-1307  USA.
  */
 
+/* Resources manipulated in this file:
+ *
+ * $VICERES Basic64Name             x128
+ * $VICERES BasicHiName             x128
+ * $VICERES BasicLoName             x128
+ * $VICERES BasicName               -vsid
+ * $VICERES ChargenCHName           x128
+ * $VICERES ChargenDEName           x128
+ * $VICERES ChargenFIName           x128
+ * $VICERES ChargenFIName           x128
+ * $VICERES ChargenFRName           x128
+ * $VICERES ChargenITName           x128
+ * $VICERES ChargenIntName          x128
+ * $VICERES ChargenNOName           x128
+ * $VICERES ChargenName             -xplus4 -vsid
+ * $VICERES ChargenSEName           x128
+ * $VICERES DosName1540             x64 x64sc x64dtv xscpu64 x128 xplus4 xvic
+ * $VICERES DosName1541             x64 x64sc x64dtv xscpu64 x128 xplus4 xvic
+ * $VICERES DosName1541ii           x64 x64sc x64dtv xscpu64 x128 xplus4 xvic
+ * $VICERES DosName1551             xplus4
+ * $VICERES DosName1571             x64 x64sc x64dtv xscpu64 x128 xplus4 xvic
+ * $VICERES DosName1571cr           x128
+ * $VICERES DosName1581             x64 x64sc x64dtv xscpu64 x128 xplus4 xvic
+ * $VICERES DosName2031             -vsid
+ * $VICERES DosName2040             -vsid
+ * $VICERES DosName3040             -vsid
+ * $VICERES DosName4040             -vsid
+ * $VICERES DosName9000             -vsid
+ * $VICERES DosNameCMDHD            x64 x64sc x64dtv xscpu64 x128 xplus4 xvic
+ * $VICERES Dosname1001             -vsid
+ * $VICERES Dosname2000             x64 x64sc x64dtv xscpu64 x128 xplus4 xvic
+ * $VICERES Dosname4000             x64 x64sc x64dtv xscpu64 x128 xplus4 xvic
+ * $VICERES DriveProFDOS1571Name    x64 x64sc x64dtv xscpu64 x128
+ * $VICERES DriveStarDosName        x64 x64sc x64dtv xscpu64 x128
+ * $VICERES DriveSuperCardName      x64 x64sc x64dtv xscpu64 x128
+ * $VICERES EditorName              xpet
+ * $VICERES FunctionHighName        xplus4
+ * $VICERES FunctionLowName         xplus4
+ * $VICERES H6809RomAName           xpet
+ * $VICERES H6809RomBName           xpet
+ * $VICERES H6809RomCName           xpet
+ * $VICERES H6809RomDName           xpet
+ * $VICERES H6809RomEName           xpet
+ * $VICERES H6809RomFName           xpet
+ * $VICERES Kernal64Name            x128
+ * $VICERES KernalCHName            x128
+ * $VICERES KernalDEName            x128
+ * $VICERES KernalFIName            x128
+ * $VICERES KernalFRName            x128
+ * $VICERES KernalITName            x128
+ * $VICERES KernalIntName           x128
+ * $VICERES KernalNOName            x128
+ * $VICERES KernalName              -vsid
+ * $VICERES KernalSEName            x128
+ * $VICERES RomModule9Name          xpet
+ * $VICERES RomModuleAName          xpet
+ * $VICERES RomModuleBName          xpet
+ * $VICERES c1hiName                xplus4
+ * $VICERES c1loName                xplus4
+ * $VICERES c2hiName                xplus4
+ * $VICERES c2loName                xplus4
+ */
+
 #include <gtk/gtk.h>
 #include <stdbool.h>
 
@@ -43,7 +106,7 @@
 #include "uiapi.h"
 #include "vice_gtk3.h"
 
-#include "rommanager.h"
+#include "settings_rom.h"
 
 
 /** \brief  Array length helper
@@ -111,9 +174,9 @@ static const machine_rom_t machine_rom_list[] = {
 
     /* Chargen, others */
 
-    /* C64, C64DTV, VIC20, Plus/4, PET, CBM II */
+    /* C64, C64DTV, VIC20, PET, CBM II */
     { "Chargen",                "ChargenName" },
-    { "International chargen",  "ChargenINTName" },     /* C128 */
+    { "International chargen",  "ChargenIntName" },     /* C128 */
     { "Finish chargen",         "ChargenFIName" },      /* C128 */
     { "French chargen",         "ChargenFRName" },      /* C128 */
     { "German chargen",         "ChargenDEName" },      /* C128 */
@@ -153,7 +216,7 @@ static const drive_rom_t drive_rom_list[] = {
     { DRIVE_TYPE_1581,      DRIVE_NAME_1581,    "DosName1581" },
     { DRIVE_TYPE_2000,      DRIVE_NAME_2000,    "DosName2000" },
     { DRIVE_TYPE_4000,      DRIVE_NAME_4000,    "DosName4000" },
-    { DRIVE_TYPE_2031,      DRIVE_NAME_2031,    "DosName2023" },
+    { DRIVE_TYPE_2031,      DRIVE_NAME_2031,    "DosName2031" },
     { DRIVE_TYPE_2040,      DRIVE_NAME_2040,    "DosName2040" },
     { DRIVE_TYPE_3040,      DRIVE_NAME_3040,    "DosName3040" },
     { DRIVE_TYPE_4040,      DRIVE_NAME_4040,    "DosName4040" },
@@ -682,7 +745,7 @@ static void add_rom_chooser(GtkWidget  *list,
 
     /* set up reset-to-default button */
     reset = gtk_button_new_from_icon_name("view-refresh-symbolic",
-                                          GTK_ICON_SIZE_LARGE_TOOLBAR);
+                                          GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_widget_set_tooltip_text(reset, "Reset to default value");
     g_signal_connect(G_OBJECT(reset),
                      "clicked",
@@ -691,7 +754,7 @@ static void add_rom_chooser(GtkWidget  *list,
 
     /* set up unload button */
     eject = gtk_button_new_from_icon_name("media-eject-symbolic",
-                                          GTK_ICON_SIZE_LARGE_TOOLBAR);
+                                          GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_widget_set_tooltip_text(eject, "Unload ROM");
     g_signal_connect(G_OBJECT(eject),
                      "clicked",
@@ -711,16 +774,15 @@ static void add_rom_chooser(GtkWidget  *list,
 /* }}} */
 
 
-/** \brief  Create ROM manager widget
+/** \brief  Create ROM settings widget
  *
  * \param[in]   parent  unused
  *
  * \return  GtkGrid
  */
-GtkWidget *rom_manager_new(GtkWidget *parent)
+GtkWidget *settings_rom_widget_create(GtkWidget *parent)
 {
     GtkWidget *grid;
-    GtkWidget *label;
     GtkWidget *scrolled;
     GtkWidget *expander;
     GtkWidget *button_box;
@@ -731,10 +793,6 @@ GtkWidget *rom_manager_new(GtkWidget *parent)
     grid = gtk_grid_new();
     gtk_grid_set_column_spacing(GTK_GRID(grid), 16);
     gtk_grid_set_row_spacing(GTK_GRID(grid), 8);
-
-    label = label_helper("<b>ROM Manager (experimental!)</b>", GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label, row, 0, 1, 1);
-    row++;
 
     root_list = gtk_list_box_new();
     scrolled  = gtk_scrolled_window_new(NULL, NULL);
@@ -852,11 +910,11 @@ GtkWidget *rom_manager_new(GtkWidget *parent)
 }
 
 
-/** \brief  Free resources used by the ROM manager
+/** \brief  Free resources used by the ROM settings
  *
  * Frees the last used directory and filename of the file dialogs.
  */
-void rom_manager_shutdown(void)
+void settings_rom_widget_shutdown(void)
 {
     g_free(last_directory);
     g_free(last_filename);
